@@ -84,15 +84,9 @@ import ImageUpload from "@/components/ImageUpload.vue";
 import ImageProcess from "@/components/ImageProcess.vue";
 import { useImageProcess } from "@/composables/useImageProcess";
 
-// 引入图片处理逻辑（移除未使用的 uploadedFile，保留并使用 reset）
-const {
-  processedImageUrl,
-  loading,
-  error,
-  downloadImage,
-  reset,
-  uploadedFile,
-} = useImageProcess();
+// 移除未使用的 uploadedFile 解构项
+const { processedImageUrl, loading, error, downloadImage, reset } =
+  useImageProcess();
 
 // 状态管理
 const uploaded = ref(false);

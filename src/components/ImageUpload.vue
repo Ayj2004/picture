@@ -54,6 +54,7 @@
 import { ref, watch } from "vue";
 import { useImageProcess } from "@/composables/useImageProcess";
 
+// 新增 upload-status-change 事件定义
 const emit = defineEmits(["upload-success", "upload-status-change"]);
 const fileInput = ref<HTMLInputElement | null>(null);
 const { uploadImage, uploadedFile, error, reset } = useImageProcess();
@@ -71,9 +72,10 @@ const handleFileChange = (e: Event) => {
   const file = target.files?.[0];
   if (file) {
     // 直接上传文件，确保同步到useImageProcess的uploadedFile
-    uploadImage(file);
-    // 主动通知上传状态变化
-    emit("upload-status-change", !!uploadedFile.value);
+    const uploadRes = uploadImage(file);
+    emit("upload-success", uploadRes.url);
+    // 触发上传状态变化事件
+    emit("upload-status-change", true);
   }
   // 重置input，允许重复选择同一文件
   target.value = "";
@@ -85,9 +87,10 @@ const handleDrop = (e: DragEvent) => {
   e.stopPropagation();
   const file = e.dataTransfer?.files?.[0];
   if (file && file.type.startsWith("image/")) {
-    uploadImage(file);
-    // 主动通知上传状态变化
-    emit("upload-status-change", !!uploadedFile.value);
+    const uploadRes = uploadImage(file);
+    emit("upload-success", uploadRes.url);
+    // 触发上传状态变化事件
+    emit("upload-status-change", true);
   }
 };
 
@@ -105,21 +108,18 @@ const handleDragLeave = (e: DragEvent) => {
 const handleRemove = () => {
   reset();
   emit("upload-success", "");
+  // 触发上传状态变化事件
   emit("upload-status-change", false);
 };
 
-// 监听uploadedFile变化，同步通知父组件
-watch(
-  uploadedFile,
-  (newVal) => {
-    if (newVal) {
-      emit("upload-success", newVal.url);
-      emit("upload-status-change", true);
-    } else {
-      emit("upload-success", "");
-      emit("upload-status-change", false);
-    }
-  },
-  { immediate: true }
-);
+// 监听上传状态变化，同步触发事件
+watch(uploadedFile, (newVal) => {
+  if (newVal) {
+    emit("upload-success", newVal.url);
+    emit("upload-status-change", true);
+  } else {
+    emit("upload-success", "");
+    emit("upload-status-change", false);
+  }
+});
 </script>
