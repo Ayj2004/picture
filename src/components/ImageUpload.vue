@@ -48,7 +48,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from "vue";
+import { ref, watch, nextTick } from "vue";
 import { useImageProcess } from "@/composables/useImageProcess";
 
 const emit = defineEmits(["upload-success"]); // 定义上传成功事件
@@ -60,13 +60,15 @@ const triggerFileInput = () => {
   fileInput.value?.click();
 };
 
-// 处理文件选择
+// 处理文件选择（增加nextTick确保响应式更新完成）
 const handleFileChange = (e: Event) => {
   const target = e.target as HTMLInputElement;
   const file = target.files?.[0];
   if (file) {
-    const uploadRes = uploadImage(file);
-    emit("upload-success", uploadRes.url); // 触发上传成功事件
+    nextTick(() => {
+      const uploadRes = uploadImage(file);
+      emit("upload-success", uploadRes.url); // 触发上传成功事件
+    });
   }
   target.value = ""; // 重置input
 };
