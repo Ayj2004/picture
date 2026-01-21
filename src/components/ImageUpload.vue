@@ -58,7 +58,6 @@
 import { ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import { useImageProcess } from "@/composables/useImageProcess";
-import type { UploadFile } from "@/types";
 
 const router = useRouter();
 const fileInput = ref<HTMLInputElement | null>(null);

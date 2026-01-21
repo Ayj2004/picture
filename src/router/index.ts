@@ -30,8 +30,8 @@ const router = createRouter({
   ],
 });
 
-// 路由守卫：检查文件/处理状态
-router.beforeEach((to, from, next) => {
+// 路由守卫：检查文件/处理状态（from 参数改为 _from 标记未使用）
+router.beforeEach((to, _from, next) => {
   const imageProcessState = JSON.parse(
     localStorage.getItem("imageProcessState") || "{}"
   );
