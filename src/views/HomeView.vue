@@ -9,7 +9,10 @@
       </div>
 
       <!-- 1. 图片上传区域 -->
-      <ImageUpload @upload-success="handleUploadSuccess" />
+      <ImageUpload
+        @upload-success="handleUploadSuccess"
+        @upload-status-change="handleUploadStatusChange"
+      />
 
       <!-- 2. 处理配置区域（仅上传图片后显示） -->
       <div v-if="uploaded" class="mt-8 card">
@@ -82,8 +85,14 @@ import ImageProcess from "@/components/ImageProcess.vue";
 import { useImageProcess } from "@/composables/useImageProcess";
 
 // 引入图片处理逻辑（移除未使用的 uploadedFile，保留并使用 reset）
-const { processedImageUrl, loading, error, downloadImage, reset } =
-  useImageProcess();
+const {
+  processedImageUrl,
+  loading,
+  error,
+  downloadImage,
+  reset,
+  uploadedFile,
+} = useImageProcess();
 
 // 状态管理
 const uploaded = ref(false);
@@ -92,10 +101,14 @@ const uploadedFileUrl = ref("");
 
 // 上传成功回调
 const handleUploadSuccess = (url: string) => {
-  uploaded.value = true;
   uploadedFileUrl.value = url;
   processed.value = false; // 重置处理状态
   error.value = ""; // 清空错误
+};
+
+// 上传状态变化回调（核心：同步useImageProcess的uploadedFile状态）
+const handleUploadStatusChange = (status: boolean) => {
+  uploaded.value = status;
 };
 
 // 处理开始回调

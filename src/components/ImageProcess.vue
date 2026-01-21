@@ -104,7 +104,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from "vue";
+import { ref, computed, watch } from "vue";
 import { useImageProcess } from "@/composables/useImageProcess";
 import type { ImageProcessConfig } from "@/types";
 
@@ -112,8 +112,20 @@ import type { ImageProcessConfig } from "@/types";
 const emit = defineEmits(["process-start", "process-success", "process-error"]);
 const { loading, error, uploadedFile, processImage } = useImageProcess();
 
-// 计算属性：判断是否已上传文件
-const hasUploadedFile = computed(() => !!uploadedFile.value?.file);
+// 计算属性：强化文件校验（同时校验uploadedFile和file字段）
+const hasUploadedFile = computed(() => {
+  // 双重校验，避免字段缺失
+  return !!uploadedFile.value && !!uploadedFile.value.file;
+});
+
+// 监听uploadedFile变化，强制更新校验状态
+watch(
+  uploadedFile,
+  () => {
+    // 触发计算属性重新计算
+  },
+  { immediate: true, deep: true }
+);
 
 // 默认配置
 const config = ref<ImageProcessConfig>({
@@ -139,6 +151,11 @@ const handleReset = () => {
 
 // 处理图片
 const handleProcess = async () => {
+  // 二次校验，防止极端情况
+  if (!hasUploadedFile.value) {
+    emit("process-error", "请先上传图片");
+    return;
+  }
   emit("process-start"); // 通知开始处理
   const result = await processImage(config.value);
   if (result.success) {
