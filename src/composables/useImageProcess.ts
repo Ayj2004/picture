@@ -69,16 +69,19 @@ export const useImageProcess = () => {
       // 将配置转为JSON字符串传递
       formData.append("config", JSON.stringify(config));
 
-      // 步骤2：调用边缘函数接口（增强跨域+超时配置）
+      // 步骤2：使用AbortController实现超时控制（替代timeout字段）
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30秒超时
+
+      // 调用边缘函数接口（增强跨域配置 + 标准超时控制）
       const response = await fetch(
         `${EDGE_FUNCTION_URL}/api/process/composite`,
         {
           method: "POST",
           body: formData,
-          // 新增：显式跨域配置 + 超时控制
-          mode: "cors",
+          mode: "cors", // 显式跨域配置
           credentials: "omit",
-          timeout: 30000, // 30秒超时
+          signal: controller.signal, // 关联AbortController
           headers: {
             // 移除Content-Type自动设置，由浏览器自动生成正确的boundary
             Accept: "application/json, blob",
@@ -86,8 +89,10 @@ export const useImageProcess = () => {
         }
       );
 
+      clearTimeout(timeoutId); // 请求成功则清除超时定时器
+
       if (!response.ok) {
-        // 新增：解析边缘函数返回的错误信息
+        // 解析边缘函数返回的错误信息
         let errMsg = `请求失败：${response.status} ${response.statusText}`;
         try {
           const errData = await response.json();
@@ -106,7 +111,14 @@ export const useImageProcess = () => {
 
       return { success: true, url };
     } catch (e) {
-      const errMsg = `处理失败：${(e as Error).message}`;
+      // 区分超时错误和其他错误
+      const errorObj = e as Error;
+      let errMsg = "";
+      if (errorObj.name === "AbortError") {
+        errMsg = "请求超时：图片处理时间超过30秒，请重试";
+      } else {
+        errMsg = `处理失败：${errorObj.message}`;
+      }
       error.value = errMsg;
       return { success: false, error: errMsg };
     } finally {
