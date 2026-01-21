@@ -1,11 +1,8 @@
 import { ref, onMounted } from "vue";
 import type { ImageProcessConfig, ProcessResult, UploadFile } from "@/types";
 
-const EDGE_FUNCTION_URL = "https://usepicture.4fa2a2a9.er.aliyun-esa.net";
-
-// 替换默认图片为 test.png
+// 引入默认静态图片和处理完成图片
 import defaultImageUrl from "@/assets/test.png";
-// 导入处理完成的静态图片 finish.png
 import finishImageUrl from "@/assets/finish.png";
 
 export const useImageProcess = () => {
@@ -34,7 +31,7 @@ export const useImageProcess = () => {
     initDefaultImage();
   });
 
-  // 上传图片逻辑（保持不变）
+  // 上传图片逻辑
   const uploadImage = (file: File): UploadFile => {
     if (defaultImageBlobUrl.value) {
       URL.revokeObjectURL(defaultImageBlobUrl.value);
@@ -46,17 +43,17 @@ export const useImageProcess = () => {
     return uploadFileObj;
   };
 
-  // 重写处理图片逻辑：直接返回 finish.png 静态资源
+  // 处理图片逻辑（直接返回finish.png）
   const processImage = async (
     config: ImageProcessConfig
   ): Promise<ProcessResult> => {
     loading.value = true;
     error.value = "";
     try {
-      // 模拟处理延迟（可选，增强体验）
+      // 模拟处理延迟（可选）
       await new Promise((resolve) => setTimeout(resolve, 800));
 
-      // 直接设置处理后图片为 finish.png
+      // 设置处理后图片为finish.png
       processedImageUrl.value = finishImageUrl;
       return { success: true, url: finishImageUrl };
     } catch (e) {
@@ -69,7 +66,7 @@ export const useImageProcess = () => {
     }
   };
 
-  // 下载/重置逻辑保持不变
+  // 下载图片
   const downloadImage = (fileName = "processed-image") => {
     if (!processedImageUrl.value) {
       alert("暂无处理后的图片可下载");
@@ -85,6 +82,7 @@ export const useImageProcess = () => {
     document.body.removeChild(a);
   };
 
+  // 重置状态
   const reset = () => {
     if (uploadedFile.value) {
       URL.revokeObjectURL(uploadedFile.value.url);
