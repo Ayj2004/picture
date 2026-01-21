@@ -11,8 +11,9 @@ export const useImageProcess = () => {
   const uploadedFile = ref<UploadFile | null>(null);
   const processedImageUrl = ref("");
   const defaultImageBlobUrl = ref("");
-  // 新增：标记是否点击开始处理并完成
   const isProcessed = ref(false);
+  // 新增：标记默认图片是否加载完成
+  const isDefaultImageLoaded = ref(false);
 
   // 初始化默认图片（test.png）
   const initDefaultImage = async () => {
@@ -23,9 +24,12 @@ export const useImageProcess = () => {
       const url = URL.createObjectURL(blob);
       defaultImageBlobUrl.value = url;
       uploadedFile.value = { file, url };
+      isDefaultImageLoaded.value = true; // 标记默认图片加载完成
+      error.value = "";
     } catch (e) {
       console.error("加载默认图片失败:", e);
       error.value = "默认图片加载失败，请上传图片后重试";
+      isDefaultImageLoaded.value = false;
     }
   };
 
@@ -42,6 +46,7 @@ export const useImageProcess = () => {
     const url = URL.createObjectURL(file);
     const uploadFileObj: UploadFile = { file, url };
     uploadedFile.value = uploadFileObj;
+    isDefaultImageLoaded.value = true; // 上传图片后标记为已加载
     return uploadFileObj;
   };
 
@@ -49,17 +54,24 @@ export const useImageProcess = () => {
   const processImage = async (
     config: ImageProcessConfig
   ): Promise<ProcessResult> => {
+    // 校验：无图片可处理时直接返回失败
+    if (!isDefaultImageLoaded.value && !uploadedFile.value) {
+      const errMsg = "默认图片未加载完成，请稍候或手动上传图片后重试";
+      error.value = errMsg;
+      return { success: false, error: errMsg };
+    }
+
     loading.value = true;
     error.value = "";
-    isProcessed.value = false; // 处理前重置状态
+    isProcessed.value = false;
     try {
       // 模拟处理延迟
       await new Promise((resolve) => setTimeout(resolve, 800));
-      console.log("处理配置:", config); // 使用config避免未使用警告
+      console.log("处理配置:", config);
 
-      // 设置处理后图片为finish.png
+      // 强制赋值处理后图片为finish.png
       processedImageUrl.value = finishImageUrl;
-      isProcessed.value = true; // 标记处理完成
+      isProcessed.value = true; // 确保标记为处理完成
       return { success: true, url: finishImageUrl };
     } catch (e) {
       const errorObj = e as Error;
@@ -102,8 +114,9 @@ export const useImageProcess = () => {
     processedImageUrl.value = "";
     error.value = "";
     loading.value = false;
-    isProcessed.value = false; // 重置处理标记
-    initDefaultImage();
+    isProcessed.value = false;
+    isDefaultImageLoaded.value = false; // 重置默认图片加载状态
+    initDefaultImage(); // 重新初始化默认图片
   };
 
   return {
@@ -111,7 +124,8 @@ export const useImageProcess = () => {
     error,
     uploadedFile,
     processedImageUrl,
-    isProcessed, // 导出新增的状态
+    isProcessed,
+    isDefaultImageLoaded, // 导出默认图片加载状态
     uploadImage,
     processImage,
     downloadImage,

@@ -30,8 +30,8 @@
       <!-- 错误提示 -->
       <div v-if="error" class="text-red-500 text-center py-2">{{ error }}</div>
 
-      <!-- 处理结果预览：仅当isProcessed为true时展示 -->
-      <div v-if="isProcessed" class="card mb-6">
+      <!-- 处理结果预览：确保processedImageUrl有值且isProcessed为true -->
+      <div v-if="isProcessed && processedImageUrl" class="card mb-6">
         <h3 class="text-lg font-medium mb-4">处理结果预览</h3>
         <img
           :src="processedImageUrl"
@@ -53,8 +53,6 @@
           </button>
         </div>
       </div>
-
-      <!-- 移除默认图片展示区域（彻底删除，不再保留注释） -->
     </div>
   </Layout>
 </template>
@@ -66,49 +64,56 @@ import ImageUpload from "@/components/ImageUpload.vue";
 import ImageProcess from "@/components/ImageProcess.vue";
 import { useImageProcess } from "@/composables/useImageProcess";
 
-// 解构useImageProcess的返回值（包含新增的isProcessed）
-const { processedImageUrl, loading, error, downloadImage, reset, isProcessed } =
-  useImageProcess();
+// 解构所有需要的状态（包括新增的isDefaultImageLoaded）
+const {
+  processedImageUrl,
+  loading,
+  error,
+  downloadImage,
+  reset,
+  isProcessed,
+  isDefaultImageLoaded,
+} = useImageProcess();
 
-// 状态管理（保留原有逻辑，避免变量未使用）
+// 状态管理
 const uploaded = ref(false);
 const processed = ref(false);
 const uploadedFileUrl = ref("");
 
-// 上传成功回调（绑定到ImageUpload组件）
+// 上传成功回调
 const handleUploadSuccess = (url: string) => {
   uploadedFileUrl.value = url;
   processed.value = false;
   error.value = "";
 };
 
-// 上传状态变更回调（绑定到ImageUpload组件）
+// 上传状态变更回调
 const handleUploadStatusChange = (status: boolean) => {
   uploaded.value = status;
 };
 
-// 处理开始回调（绑定到ImageProcess组件）
+// 处理开始回调
 const handleProcessStart = () => {
   processed.value = false;
   error.value = "";
 };
 
-// 处理成功回调（绑定到ImageProcess组件）
+// 处理成功回调
 const handleProcessSuccess = () => {
   processed.value = true;
 };
 
-// 处理失败回调（绑定到ImageProcess组件）
+// 处理失败回调
 const handleProcessError = (err: string) => {
   error.value = err;
 };
 
-// 定义下载图片方法（修复TS2339错误）
+// 下载图片
 const handleDownload = () => {
   downloadImage("processed-image");
 };
 
-// 定义重置所有方法（修复TS2339错误）
+// 重置所有
 const handleReset = () => {
   reset();
   uploaded.value = false;

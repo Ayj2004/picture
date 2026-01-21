@@ -79,7 +79,7 @@
     <!-- 错误提示 -->
     <div v-if="error" class="text-red-500 mb-4 text-sm">{{ error }}</div>
 
-    <!-- 操作按钮 -->
+    <!-- 操作按钮：禁用直到默认图片加载完成 -->
     <div class="flex gap-4">
       <button
         class="px-6 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors"
@@ -90,7 +90,7 @@
       <button
         class="px-6 py-2 bg-primary text-white rounded-md hover:bg-primary/90 transition-colors"
         @click="handleProcess"
-        :disabled="loading"
+        :disabled="loading || !isDefaultImageLoaded"
       >
         <span v-if="loading" class="inline-block animate-spin mr-2">🔄</span>
         开始处理
@@ -107,7 +107,7 @@ import type { ImageProcessConfig } from "@/types";
 // 定义事件
 const emit = defineEmits(["process-start", "process-success", "process-error"]);
 const imageProcess = useImageProcess();
-const { loading, error, processImage } = imageProcess;
+const { loading, error, processImage, isDefaultImageLoaded } = imageProcess;
 
 // 默认配置（1024x1024、旋转90度、水印test、PNG格式）
 const config = ref<ImageProcessConfig>({
