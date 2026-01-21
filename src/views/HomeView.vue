@@ -47,6 +47,13 @@
         >
           下载处理后图片
         </button>
+        <!-- 新增重置按钮，使用 reset 方法 -->
+        <button
+          class="mt-4 ml-4 px-6 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors"
+          @click="handleReset"
+        >
+          重置所有状态
+        </button>
       </div>
 
       <!-- 加载/错误提示 -->
@@ -74,15 +81,9 @@ import ImageUpload from "@/components/ImageUpload.vue";
 import ImageProcess from "@/components/ImageProcess.vue";
 import { useImageProcess } from "@/composables/useImageProcess";
 
-// 引入图片处理逻辑
-const {
-  uploadedFile,
-  processedImageUrl,
-  loading,
-  error,
-  downloadImage,
-  reset,
-} = useImageProcess();
+// 引入图片处理逻辑（移除未使用的 uploadedFile，保留并使用 reset）
+const { processedImageUrl, loading, error, downloadImage, reset } =
+  useImageProcess();
 
 // 状态管理
 const uploaded = ref(false);
@@ -116,5 +117,14 @@ const handleProcessError = (err: string) => {
 // 下载图片
 const handleDownload = () => {
   downloadImage("processed-image");
+};
+
+// 新增：使用 reset 方法的回调函数
+const handleReset = () => {
+  reset();
+  uploaded.value = false;
+  processed.value = false;
+  uploadedFileUrl.value = "";
+  error.value = "";
 };
 </script>
