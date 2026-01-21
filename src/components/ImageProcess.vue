@@ -100,7 +100,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from "vue";
+import { ref } from "vue"; // 移除未使用的 computed
 import { useImageProcess } from "@/composables/useImageProcess";
 import type { ImageProcessConfig } from "@/types";
 
@@ -108,7 +108,8 @@ import type { ImageProcessConfig } from "@/types";
 const emit = defineEmits(["process-start", "process-success", "process-error"]);
 // 直接获取useImageProcess的响应式对象（确保引用一致）
 const imageProcess = useImageProcess();
-const { loading, error, uploadedFile, processImage } = imageProcess;
+// 移除未使用的 uploadedFile 解构项
+const { loading, error, processImage } = imageProcess;
 
 // 默认配置
 const config = ref<ImageProcessConfig>({

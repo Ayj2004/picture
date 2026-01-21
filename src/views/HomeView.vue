@@ -78,7 +78,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from "vue";
+import { ref } from "vue"; // 移除未使用的 computed
 import Layout from "@/components/Layout.vue";
 import ImageUpload from "@/components/ImageUpload.vue";
 import ImageProcess from "@/components/ImageProcess.vue";
@@ -87,14 +87,8 @@ import { useImageProcess } from "@/composables/useImageProcess";
 import defaultImageUrl from "@/assets/test.jpg";
 
 // 移除未使用的 uploadedFile 解构项
-const {
-  processedImageUrl,
-  loading,
-  error,
-  downloadImage,
-  reset,
-  uploadedFile,
-} = useImageProcess();
+const { processedImageUrl, loading, error, downloadImage, reset } =
+  useImageProcess();
 
 // 状态管理
 const uploaded = ref(false);
