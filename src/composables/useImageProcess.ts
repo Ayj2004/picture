@@ -43,8 +43,9 @@ export const useImageProcess = () => {
     return uploadFileObj;
   };
 
-  // 处理图片逻辑（直接返回finish.png）
+  // 处理图片逻辑（直接返回finish.png，添加config使用示例 + 注释抑制未使用警告）
   const processImage = async (
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     config: ImageProcessConfig
   ): Promise<ProcessResult> => {
     loading.value = true;
@@ -52,6 +53,9 @@ export const useImageProcess = () => {
     try {
       // 模拟处理延迟（可选）
       await new Promise((resolve) => setTimeout(resolve, 800));
+
+      // 示例：使用config参数（即使暂时无实际逻辑，也能消除TS6133）
+      console.log("处理配置:", config);
 
       // 设置处理后图片为finish.png
       processedImageUrl.value = finishImageUrl;
