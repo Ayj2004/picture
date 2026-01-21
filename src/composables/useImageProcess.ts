@@ -1,29 +1,28 @@
 import { ref, onMounted } from "vue";
 import type { ImageProcessConfig, ProcessResult, UploadFile } from "@/types";
 
-// 边缘函数部署地址（替换为你的实际地址）
 const EDGE_FUNCTION_URL = "https://usepicture.4fa2a2a9.er.aliyun-esa.net";
 
-// 引入默认静态图片
-import defaultImageUrl from "@/assets/test.jpg";
+// 替换默认图片为 test.png
+import defaultImageUrl from "@/assets/test.png";
+// 导入处理完成的静态图片 finish.png
+import finishImageUrl from "@/assets/finish.png";
 
 export const useImageProcess = () => {
   const loading = ref(false);
   const error = ref("");
   const uploadedFile = ref<UploadFile | null>(null);
   const processedImageUrl = ref("");
-  // 存储默认图片的Blob URL
   const defaultImageBlobUrl = ref("");
 
-  // 初始化默认图片
+  // 初始化默认图片（test.png）
   const initDefaultImage = async () => {
     try {
       const response = await fetch(defaultImageUrl);
       const blob = await response.blob();
-      const file = new File([blob], "test.jpg", { type: blob.type });
+      const file = new File([blob], "test.png", { type: blob.type });
       const url = URL.createObjectURL(blob);
       defaultImageBlobUrl.value = url;
-      // 初始化默认上传文件对象
       uploadedFile.value = { file, url };
     } catch (e) {
       console.error("加载默认图片失败:", e);
@@ -31,14 +30,12 @@ export const useImageProcess = () => {
     }
   };
 
-  // 页面挂载时加载默认图片
   onMounted(() => {
     initDefaultImage();
   });
 
-  // 1. 上传图片（生成本地预览URL）
+  // 上传图片逻辑（保持不变）
   const uploadImage = (file: File): UploadFile => {
-    // 释放之前的默认图片URL
     if (defaultImageBlobUrl.value) {
       URL.revokeObjectURL(defaultImageBlobUrl.value);
       defaultImageBlobUrl.value = "";
@@ -49,76 +46,22 @@ export const useImageProcess = () => {
     return uploadFileObj;
   };
 
-  // 2. 处理图片（支持默认图片，修复请求逻辑）
+  // 重写处理图片逻辑：直接返回 finish.png 静态资源
   const processImage = async (
     config: ImageProcessConfig
   ): Promise<ProcessResult> => {
-    // 校验：优先使用上传文件，无则使用默认图片
-    if (!uploadedFile.value || !uploadedFile.value.file) {
-      const errMsg = "图片加载失败，请稍后重试";
-      error.value = errMsg;
-      return { success: false, error: errMsg };
-    }
-
     loading.value = true;
     error.value = "";
     try {
-      // 步骤1：构建FormData（同时传递文件和配置）
-      const formData = new FormData();
-      formData.append("file", uploadedFile.value.file);
-      // 将配置转为JSON字符串传递
-      formData.append("config", JSON.stringify(config));
+      // 模拟处理延迟（可选，增强体验）
+      await new Promise((resolve) => setTimeout(resolve, 800));
 
-      // 步骤2：使用AbortController实现超时控制（替代timeout字段）
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30秒超时
-
-      // 调用边缘函数接口（增强跨域配置 + 标准超时控制）
-      const response = await fetch(
-        `${EDGE_FUNCTION_URL}/api/process/composite`,
-        {
-          method: "POST",
-          body: formData,
-          mode: "cors", // 显式跨域配置
-          credentials: "omit",
-          signal: controller.signal, // 关联AbortController
-          headers: {
-            // 移除Content-Type自动设置，由浏览器自动生成正确的boundary
-            Accept: "application/json, blob",
-          },
-        }
-      );
-
-      clearTimeout(timeoutId); // 请求成功则清除超时定时器
-
-      if (!response.ok) {
-        // 解析边缘函数返回的错误信息
-        let errMsg = `请求失败：${response.status} ${response.statusText}`;
-        try {
-          const errData = await response.json();
-          if (errData.error) errMsg = errData.error;
-        } catch (e) {}
-        throw new Error(errMsg);
-      }
-
-      // 处理响应：获取Blob并生成预览URL
-      const blob = await response.blob();
-      // 校验Blob有效性
-      if (blob.size === 0) throw new Error("处理后的图片为空");
-
-      const url = URL.createObjectURL(blob);
-      processedImageUrl.value = url;
-
-      return { success: true, url };
+      // 直接设置处理后图片为 finish.png
+      processedImageUrl.value = finishImageUrl;
+      return { success: true, url: finishImageUrl };
     } catch (e) {
-      // 区分超时错误和其他错误
       const errorObj = e as Error;
-      let errMsg = "";
-      if (errorObj.name === "AbortError") {
-        errMsg = "请求超时：图片处理时间超过30秒，请重试";
-      } else {
-        errMsg = `处理失败：${errorObj.message}`;
-      }
+      const errMsg = `处理失败：${errorObj.message}`;
       error.value = errMsg;
       return { success: false, error: errMsg };
     } finally {
@@ -126,7 +69,7 @@ export const useImageProcess = () => {
     }
   };
 
-  // 3. 下载处理后的图片
+  // 下载/重置逻辑保持不变
   const downloadImage = (fileName = "processed-image") => {
     if (!processedImageUrl.value) {
       alert("暂无处理后的图片可下载");
@@ -134,7 +77,6 @@ export const useImageProcess = () => {
     }
     const a = document.createElement("a");
     a.href = processedImageUrl.value;
-    // 从Blob URL解析文件格式
     const blobType =
       processedImageUrl.value.split(";")[0].split("/")[1] || "png";
     a.download = `${fileName}.${blobType}`;
@@ -143,17 +85,13 @@ export const useImageProcess = () => {
     document.body.removeChild(a);
   };
 
-  // 4. 重置状态（清理URL和文件）
   const reset = () => {
-    // 释放上传文件的URL
     if (uploadedFile.value) {
       URL.revokeObjectURL(uploadedFile.value.url);
     }
-    // 释放默认图片URL
     if (defaultImageBlobUrl.value) {
       URL.revokeObjectURL(defaultImageBlobUrl.value);
     }
-    // 释放处理后的图片URL
     if (processedImageUrl.value) {
       URL.revokeObjectURL(processedImageUrl.value);
     }
@@ -161,7 +99,6 @@ export const useImageProcess = () => {
     processedImageUrl.value = "";
     error.value = "";
     loading.value = false;
-    // 重置后重新加载默认图片
     initDefaultImage();
   };
 
