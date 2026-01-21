@@ -51,7 +51,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
+// 关键修复：补充导入 watchEffect
+import { ref, watchEffect } from "vue";
 import { useImageProcess } from "@/composables/useImageProcess";
 
 // 新增 upload-status-change 事件定义
