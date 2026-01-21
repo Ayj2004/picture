@@ -51,12 +51,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from "vue";
+import { ref } from "vue";
 import { useImageProcess } from "@/composables/useImageProcess";
 
 // 新增 upload-status-change 事件定义
 const emit = defineEmits(["upload-success", "upload-status-change"]);
 const fileInput = ref<HTMLInputElement | null>(null);
+// 确保使用同一个useImageProcess实例
 const { uploadImage, uploadedFile, error, reset } = useImageProcess();
 
 // 触发文件选择
@@ -112,10 +113,10 @@ const handleRemove = () => {
   emit("upload-status-change", false);
 };
 
-// 监听上传状态变化，同步触发事件
-watch(uploadedFile, (newVal) => {
-  if (newVal) {
-    emit("upload-success", newVal.url);
+// 监听uploadedFile的变化，确保状态同步
+watchEffect(() => {
+  if (uploadedFile.value) {
+    emit("upload-success", uploadedFile.value.url);
     emit("upload-status-change", true);
   } else {
     emit("upload-success", "");

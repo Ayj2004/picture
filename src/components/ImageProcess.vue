@@ -104,28 +104,20 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from "vue";
+import { ref, computed } from "vue";
 import { useImageProcess } from "@/composables/useImageProcess";
 import type { ImageProcessConfig } from "@/types";
 
 // 定义事件
 const emit = defineEmits(["process-start", "process-success", "process-error"]);
-const { loading, error, uploadedFile, processImage } = useImageProcess();
+// 直接获取useImageProcess的响应式对象（确保引用一致）
+const imageProcess = useImageProcess();
+const { loading, error, uploadedFile, processImage } = imageProcess;
 
-// 计算属性：强化文件校验（同时校验uploadedFile和file字段）
+// 优化校验逻辑：直接校验uploadedFile的存在性
 const hasUploadedFile = computed(() => {
-  // 双重校验，避免字段缺失
-  return !!uploadedFile.value && !!uploadedFile.value.file;
+  return !!uploadedFile.value?.file;
 });
-
-// 监听uploadedFile变化，强制更新校验状态
-watch(
-  uploadedFile,
-  () => {
-    // 触发计算属性重新计算
-  },
-  { immediate: true, deep: true }
-);
 
 // 默认配置
 const config = ref<ImageProcessConfig>({
