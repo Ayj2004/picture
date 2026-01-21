@@ -1,30 +1,61 @@
-import { ref } from "vue";
+import { ref, onMounted } from "vue";
 import type { ImageProcessConfig, ProcessResult, UploadFile } from "@/types";
 
 // 边缘函数部署地址（替换为你的实际地址）
 const EDGE_FUNCTION_URL = "https://usepicture.4fa2a2a9.er.aliyun-esa.net";
+
+// 引入默认静态图片
+import defaultImageUrl from "@/assets/test.jpg";
 
 export const useImageProcess = () => {
   const loading = ref(false);
   const error = ref("");
   const uploadedFile = ref<UploadFile | null>(null);
   const processedImageUrl = ref("");
+  // 存储默认图片的Blob URL
+  const defaultImageBlobUrl = ref("");
+
+  // 初始化默认图片
+  const initDefaultImage = async () => {
+    try {
+      const response = await fetch(defaultImageUrl);
+      const blob = await response.blob();
+      const file = new File([blob], "test.jpg", { type: blob.type });
+      const url = URL.createObjectURL(blob);
+      defaultImageBlobUrl.value = url;
+      // 初始化默认上传文件对象
+      uploadedFile.value = { file, url };
+    } catch (e) {
+      console.error("加载默认图片失败:", e);
+      error.value = "默认图片加载失败，请上传图片后重试";
+    }
+  };
+
+  // 页面挂载时加载默认图片
+  onMounted(() => {
+    initDefaultImage();
+  });
 
   // 1. 上传图片（生成本地预览URL）
   const uploadImage = (file: File): UploadFile => {
+    // 释放之前的默认图片URL
+    if (defaultImageBlobUrl.value) {
+      URL.revokeObjectURL(defaultImageBlobUrl.value);
+      defaultImageBlobUrl.value = "";
+    }
     const url = URL.createObjectURL(file);
     const uploadFileObj: UploadFile = { file, url };
-    uploadedFile.value = uploadFileObj; // 确保文件对象正确赋值
+    uploadedFile.value = uploadFileObj;
     return uploadFileObj;
   };
 
-  // 2. 处理图片（修复文件校验和请求逻辑）
+  // 2. 处理图片（支持默认图片）
   const processImage = async (
     config: ImageProcessConfig
   ): Promise<ProcessResult> => {
-    // 严格校验文件是否存在
+    // 校验：优先使用上传文件，无则使用默认图片
     if (!uploadedFile.value || !uploadedFile.value.file) {
-      const errMsg = "请先上传图片";
+      const errMsg = "图片加载失败，请稍后重试";
       error.value = errMsg;
       return { success: false, error: errMsg };
     }
@@ -85,10 +116,15 @@ export const useImageProcess = () => {
 
   // 4. 重置状态（清理URL和文件）
   const reset = () => {
-    // 释放URL对象，避免内存泄漏
+    // 释放上传文件的URL
     if (uploadedFile.value) {
       URL.revokeObjectURL(uploadedFile.value.url);
     }
+    // 释放默认图片URL
+    if (defaultImageBlobUrl.value) {
+      URL.revokeObjectURL(defaultImageBlobUrl.value);
+    }
+    // 释放处理后的图片URL
     if (processedImageUrl.value) {
       URL.revokeObjectURL(processedImageUrl.value);
     }
@@ -96,6 +132,8 @@ export const useImageProcess = () => {
     processedImageUrl.value = "";
     error.value = "";
     loading.value = false;
+    // 重置后重新加载默认图片
+    initDefaultImage();
   };
 
   return {

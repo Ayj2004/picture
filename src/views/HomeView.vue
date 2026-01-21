@@ -14,8 +14,8 @@
         @upload-status-change="handleUploadStatusChange"
       />
 
-      <!-- 2. 处理配置区域（仅上传图片后显示） -->
-      <div v-if="uploaded" class="mt-8 card">
+      <!-- 2. 处理配置区域（始终显示，支持默认图片） -->
+      <div class="mt-8 card">
         <ImageProcess
           @process-start="handleProcessStart"
           @process-success="handleProcessSuccess"
@@ -30,7 +30,7 @@
           <div class="flex-1">
             <h4 class="text-sm text-gray-500 mb-2">原图</h4>
             <img
-              :src="uploadedFileUrl"
+              :src="uploadedFileUrl || defaultImageUrl"
               alt="原图"
               class="w-full max-h-64 object-contain rounded border"
             />
@@ -78,15 +78,23 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref, computed } from "vue";
 import Layout from "@/components/Layout.vue";
 import ImageUpload from "@/components/ImageUpload.vue";
 import ImageProcess from "@/components/ImageProcess.vue";
 import { useImageProcess } from "@/composables/useImageProcess";
+// 引入默认图片
+import defaultImageUrl from "@/assets/test.jpg";
 
 // 移除未使用的 uploadedFile 解构项
-const { processedImageUrl, loading, error, downloadImage, reset } =
-  useImageProcess();
+const {
+  processedImageUrl,
+  loading,
+  error,
+  downloadImage,
+  reset,
+  uploadedFile,
+} = useImageProcess();
 
 // 状态管理
 const uploaded = ref(false);

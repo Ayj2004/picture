@@ -16,20 +16,15 @@
         @change="handleFileChange"
       />
       <div v-if="!uploadedFile" class="space-y-2">
-        <svg
-          class="mx-auto h-12 w-12 text-gray-400"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-          />
-        </svg>
-        <p class="text-gray-500">点击上传或拖拽图片到此处</p>
+        <!-- 显示默认图片预览 -->
+        <img
+          :src="defaultImageUrl"
+          alt="默认图片"
+          class="mx-auto max-w-xs max-h-32 object-contain mb-2 rounded"
+        />
+        <p class="text-gray-500">
+          点击上传或拖拽图片到此处（默认使用示例图片）
+        </p>
         <p class="text-xs text-gray-400">支持JPG、PNG、WEBP等格式</p>
       </div>
       <div v-else class="relative">
@@ -54,6 +49,8 @@
 // 关键修复：补充导入 watchEffect
 import { ref, watchEffect } from "vue";
 import { useImageProcess } from "@/composables/useImageProcess";
+// 引入默认图片
+import defaultImageUrl from "@/assets/test.jpg";
 
 // 新增 upload-status-change 事件定义
 const emit = defineEmits(["upload-success", "upload-status-change"]);

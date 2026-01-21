@@ -78,10 +78,6 @@
 
     <!-- 错误提示 -->
     <div v-if="error" class="text-red-500 mb-4 text-sm">{{ error }}</div>
-    <!-- 额外提示：未上传文件时禁用按钮并提示 -->
-    <div v-if="!hasUploadedFile" class="text-orange-500 mb-4 text-sm">
-      ⚠️ 请先上传图片再进行处理
-    </div>
 
     <!-- 操作按钮 -->
     <div class="flex gap-4">
@@ -94,7 +90,7 @@
       <button
         class="px-6 py-2 bg-primary text-white rounded-md hover:bg-primary/90 transition-colors"
         @click="handleProcess"
-        :disabled="loading || !hasUploadedFile"
+        :disabled="loading"
       >
         <span v-if="loading" class="inline-block animate-spin mr-2">🔄</span>
         开始处理
@@ -113,11 +109,6 @@ const emit = defineEmits(["process-start", "process-success", "process-error"]);
 // 直接获取useImageProcess的响应式对象（确保引用一致）
 const imageProcess = useImageProcess();
 const { loading, error, uploadedFile, processImage } = imageProcess;
-
-// 优化校验逻辑：直接校验uploadedFile的存在性
-const hasUploadedFile = computed(() => {
-  return !!uploadedFile.value?.file;
-});
 
 // 默认配置
 const config = ref<ImageProcessConfig>({
@@ -143,11 +134,6 @@ const handleReset = () => {
 
 // 处理图片
 const handleProcess = async () => {
-  // 二次校验，防止极端情况
-  if (!hasUploadedFile.value) {
-    emit("process-error", "请先上传图片");
-    return;
-  }
   emit("process-start"); // 通知开始处理
   const result = await processImage(config.value);
   if (result.success) {
