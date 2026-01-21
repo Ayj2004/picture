@@ -64,16 +64,9 @@ import ImageUpload from "@/components/ImageUpload.vue";
 import ImageProcess from "@/components/ImageProcess.vue";
 import { useImageProcess } from "@/composables/useImageProcess";
 
-// 解构所有需要的状态（包括新增的isDefaultImageLoaded）
-const {
-  processedImageUrl,
-  loading,
-  error,
-  downloadImage,
-  reset,
-  isProcessed,
-  isDefaultImageLoaded,
-} = useImageProcess();
+// 移除未使用的isDefaultImageLoaded解构，解决TS6133错误
+const { processedImageUrl, loading, error, downloadImage, reset, isProcessed } =
+  useImageProcess();
 
 // 状态管理
 const uploaded = ref(false);
