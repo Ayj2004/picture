@@ -17,7 +17,7 @@ export const useImageProcess = () => {
     return uploadedFile.value;
   };
 
-  // 2. 处理图片（核心：修复文件+配置传递逻辑）
+  // 2. 处理图片（修复：使用FormData传递文件+配置）
   const processImage = async (
     config: ImageProcessConfig
   ): Promise<ProcessResult> => {
@@ -31,28 +31,25 @@ export const useImageProcess = () => {
     loading.value = true;
     error.value = "";
     try {
-      // 步骤1：将文件上传到边缘函数并获取临时访问URL（模拟，实际需后端支持文件接收）
-      // 先通过FormData上传文件，再传递配置
-      const fileFormData = new FormData();
-      fileFormData.append("file", uploadedFile.value.file);
+      // 步骤1：构建FormData，包含文件和配置
+      const formData = new FormData();
+      // 添加图片文件
+      formData.append("file", uploadedFile.value.file);
+      // 添加处理配置（转为JSON字符串）
+      formData.append("config", JSON.stringify(config));
 
-      // 步骤2：调用组合处理接口，同时传递文件和配置
+      // 步骤2：调用组合处理接口，传递FormData
       const response = await fetch(
         `${EDGE_FUNCTION_URL}/api/process/composite`,
         {
           method: "POST",
-          body: JSON.stringify({
-            file: uploadedFile.value.file.name, // 传递文件名（后端需调整接收逻辑）
-            config: config, // 传递处理配置
-          }),
-          headers: {
-            "Content-Type": "application/json",
-          },
+          body: formData, // 传递FormData而非JSON
+          // 无需手动设置Content-Type，浏览器会自动添加multipart/form-data及boundary
         }
       );
 
       if (!response.ok) {
-        throw new Error(`请求失败：${response.status}`);
+        throw new Error(`请求失败：${response.status} ${response.statusText}`);
       }
 
       // 处理后的图片转为Blob URL
