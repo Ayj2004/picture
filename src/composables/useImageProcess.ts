@@ -49,7 +49,7 @@ export const useImageProcess = () => {
     return uploadFileObj;
   };
 
-  // 2. 处理图片（支持默认图片）
+  // 2. 处理图片（支持默认图片，修复请求逻辑）
   const processImage = async (
     config: ImageProcessConfig
   ): Promise<ProcessResult> => {
@@ -69,21 +69,38 @@ export const useImageProcess = () => {
       // 将配置转为JSON字符串传递
       formData.append("config", JSON.stringify(config));
 
-      // 步骤2：调用边缘函数接口（使用FormData正确传递文件）
+      // 步骤2：调用边缘函数接口（增强跨域+超时配置）
       const response = await fetch(
         `${EDGE_FUNCTION_URL}/api/process/composite`,
         {
           method: "POST",
-          body: formData, // 直接传递FormData，无需设置Content-Type
+          body: formData,
+          // 新增：显式跨域配置 + 超时控制
+          mode: "cors",
+          credentials: "omit",
+          timeout: 30000, // 30秒超时
+          headers: {
+            // 移除Content-Type自动设置，由浏览器自动生成正确的boundary
+            Accept: "application/json, blob",
+          },
         }
       );
 
       if (!response.ok) {
-        throw new Error(`请求失败：${response.status} ${response.statusText}`);
+        // 新增：解析边缘函数返回的错误信息
+        let errMsg = `请求失败：${response.status} ${response.statusText}`;
+        try {
+          const errData = await response.json();
+          if (errData.error) errMsg = errData.error;
+        } catch (e) {}
+        throw new Error(errMsg);
       }
 
       // 处理响应：获取Blob并生成预览URL
       const blob = await response.blob();
+      // 校验Blob有效性
+      if (blob.size === 0) throw new Error("处理后的图片为空");
+
       const url = URL.createObjectURL(blob);
       processedImageUrl.value = url;
 
