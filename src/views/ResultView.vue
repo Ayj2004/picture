@@ -1,16 +1,35 @@
+<!-- src/components/ImagePreview.vue -->
 <template>
-  <Layout title="处理结果 | 在线图片处理系统">
-    <div class="max-w-4xl mx-auto px-4">
-      <div class="text-center mb-8">
-        <h1 class="text-2xl font-bold mb-2">图片处理结果</h1>
-        <p class="text-gray-600">预览并下载处理后的图片</p>
-      </div>
-      <ImagePreview />
+  <div class="card">
+    <h3 class="text-lg font-medium mb-4">图片预览</h3>
+    <!-- 仅当isProcessed为true时展示处理后图片 -->
+    <div v-if="isProcessed && processedImageUrl" class="mb-4">
+      <img
+        :src="processedImageUrl"
+        alt="处理后图片"
+        class="w-full max-h-96 object-contain rounded border"
+      />
     </div>
-  </Layout>
+    <div v-else class="text-gray-500 text-center py-8">
+      暂无处理后的图片可预览
+    </div>
+    <button
+      class="px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
+      @click="handleDownload"
+      :disabled="!isProcessed || !processedImageUrl"
+    >
+      下载图片
+    </button>
+  </div>
 </template>
 
 <script setup lang="ts">
-import Layout from "@/components/Layout.vue";
-import ImagePreview from "@/components/ImagePreview.vue";
+import { useImageProcess } from "@/composables/useImageProcess";
+
+// 解构isProcessed
+const { processedImageUrl, downloadImage, isProcessed } = useImageProcess();
+
+const handleDownload = () => {
+  downloadImage("processed-image");
+};
 </script>
