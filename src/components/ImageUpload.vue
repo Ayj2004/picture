@@ -1,5 +1,5 @@
 <template>
-  <div class="mb-8">
+  <div class="mb-8 card">
     <h3 class="text-lg font-medium mb-4">上传图片</h3>
     <div
       class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-primary transition-colors cursor-pointer"
@@ -44,22 +44,14 @@
       </div>
     </div>
     <div v-if="error" class="text-red-500 mt-2 text-sm">{{ error }}</div>
-    <button
-      v-if="uploadedFile"
-      class="mt-4 px-6 py-2 bg-primary text-white rounded-md hover:bg-primary/90 transition-colors"
-      @click="handleNext"
-    >
-      下一步：处理配置
-    </button>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, watch } from "vue";
-import { useRouter } from "vue-router";
 import { useImageProcess } from "@/composables/useImageProcess";
 
-const router = useRouter();
+const emit = defineEmits(["upload-success"]); // 定义上传成功事件
 const fileInput = ref<HTMLInputElement | null>(null);
 const { uploadImage, uploadedFile, error, reset } = useImageProcess();
 
@@ -73,14 +65,8 @@ const handleFileChange = (e: Event) => {
   const target = e.target as HTMLInputElement;
   const file = target.files?.[0];
   if (file) {
-    uploadImage(file);
-    // 保存状态到本地存储
-    localStorage.setItem(
-      "imageProcessState",
-      JSON.stringify({
-        uploadedFileUrl: uploadedFile.value?.url,
-      })
-    );
+    const uploadRes = uploadImage(file);
+    emit("upload-success", uploadRes.url); // 触发上传成功事件
   }
   target.value = ""; // 重置input
 };
@@ -88,18 +74,13 @@ const handleFileChange = (e: Event) => {
 // 移除已上传文件
 const handleRemove = () => {
   reset();
-  localStorage.removeItem("imageProcessState");
+  emit("upload-success", ""); // 清空上传状态
 };
 
-// 跳转到处理配置页
-const handleNext = () => {
-  router.push({ name: "process" });
-};
-
-// 监听上传状态，同步到本地存储
+// 监听上传状态，同步触发事件
 watch(uploadedFile, (newVal) => {
-  const state = JSON.parse(localStorage.getItem("imageProcessState") || "{}");
-  state.uploadedFileUrl = newVal?.url;
-  localStorage.setItem("imageProcessState", JSON.stringify(state));
+  if (newVal) {
+    emit("upload-success", newVal.url);
+  }
 });
 </script>

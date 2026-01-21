@@ -15,20 +15,6 @@
           >
             首页
           </router-link>
-          <router-link
-            to="/process"
-            class="text-gray-700 hover:text-primary transition-colors"
-            :class="{ 'text-primary font-medium': $route.name === 'process' }"
-          >
-            处理配置
-          </router-link>
-          <router-link
-            to="/result"
-            class="text-gray-700 hover:text-primary transition-colors"
-            :class="{ 'text-primary font-medium': $route.name === 'result' }"
-          >
-            结果预览
-          </router-link>
         </div>
       </div>
     </div>

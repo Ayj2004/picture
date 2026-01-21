@@ -1,5 +1,5 @@
 <template>
-  <div class="mb-8 max-w-2xl mx-auto">
+  <div class="mb-4">
     <h3 class="text-lg font-medium mb-4">图片处理配置</h3>
 
     <!-- 格式转换 -->
@@ -101,12 +101,12 @@
 
 <script setup lang="ts">
 import { ref } from "vue";
-import { useRouter } from "vue-router";
 import { useImageProcess } from "@/composables/useImageProcess";
 import type { ImageProcessConfig } from "@/types";
 
-const router = useRouter();
-const { loading, error, processImage, processedImageUrl } = useImageProcess();
+// 定义事件
+const emit = defineEmits(["process-start", "process-success", "process-error"]);
+const { loading, error, processImage } = useImageProcess();
 
 // 默认配置
 const config = ref<ImageProcessConfig>({
@@ -130,19 +130,14 @@ const handleReset = () => {
   };
 };
 
-// 处理图片并跳转结果页
+// 处理图片（仅触发事件，不跳转路由）
 const handleProcess = async () => {
+  emit("process-start"); // 通知开始处理
   const result = await processImage(config.value);
   if (result.success) {
-    // 保存处理结果状态
-    localStorage.setItem(
-      "imageProcessState",
-      JSON.stringify({
-        ...JSON.parse(localStorage.getItem("imageProcessState") || "{}"),
-        processedImageUrl: processedImageUrl.value,
-      })
-    );
-    router.push({ name: "result" });
+    emit("process-success"); // 通知处理成功
+  } else {
+    emit("process-error", result.error); // 通知处理失败
   }
 };
 </script>
