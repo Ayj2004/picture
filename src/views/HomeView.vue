@@ -1,8 +1,34 @@
-<!-- src/views/HomeView.vue -->
 <template>
   <Layout>
     <div class="max-w-4xl mx-auto px-4 py-8">
-      <!-- 其他内容不变 -->
+      <div class="text-center mb-8">
+        <h1 class="text-2xl font-bold text-primary">在线图片处理系统</h1>
+        <p class="text-gray-600">上传图片并自定义处理配置</p>
+      </div>
+
+      <!-- 图片上传组件 -->
+      <ImageUpload
+        @upload-success="handleUploadSuccess"
+        @upload-status-change="handleUploadStatusChange"
+        class="mb-6"
+      />
+
+      <!-- 图片处理配置组件 -->
+      <ImageProcess
+        @process-start="handleProcessStart"
+        @process-success="handleProcessSuccess"
+        @process-error="handleProcessError"
+        class="mb-6"
+      />
+
+      <!-- 加载状态 -->
+      <div v-if="loading" class="text-center py-4 text-primary">
+        <span class="inline-block animate-spin mr-2">🔄</span>
+        图片处理中...
+      </div>
+
+      <!-- 错误提示 -->
+      <div v-if="error" class="text-red-500 text-center py-2">{{ error }}</div>
 
       <!-- 处理结果预览：仅当isProcessed为true时展示 -->
       <div v-if="isProcessed" class="card mb-6">
@@ -28,16 +54,7 @@
         </div>
       </div>
 
-      <!-- 移除默认图片展示：未处理时不显示任何图片 -->
-      <!-- 注释/删除以下默认图片相关代码 -->
-      <!-- <div v-if="!processedImageUrl && defaultImageUrl" class="text-center">
-        <img
-          :src="defaultImageUrl"
-          alt="默认图片"
-          class="mx-auto max-w-xs max-h-32 object-contain rounded"
-        />
-        <p class="text-gray-500 mt-2">未处理时展示默认图片</p>
-      </div> -->
+      <!-- 移除默认图片展示区域（彻底删除，不再保留注释） -->
     </div>
   </Layout>
 </template>
@@ -48,12 +65,55 @@ import Layout from "@/components/Layout.vue";
 import ImageUpload from "@/components/ImageUpload.vue";
 import ImageProcess from "@/components/ImageProcess.vue";
 import { useImageProcess } from "@/composables/useImageProcess";
-// 移除默认图片引入（如果不需要）
-// import defaultImageUrl from "@/assets/test.png";
 
-// 解构新增的isProcessed状态
+// 解构useImageProcess的返回值（包含新增的isProcessed）
 const { processedImageUrl, loading, error, downloadImage, reset, isProcessed } =
   useImageProcess();
 
-// 其他逻辑不变...
+// 状态管理（保留原有逻辑，避免变量未使用）
+const uploaded = ref(false);
+const processed = ref(false);
+const uploadedFileUrl = ref("");
+
+// 上传成功回调（绑定到ImageUpload组件）
+const handleUploadSuccess = (url: string) => {
+  uploadedFileUrl.value = url;
+  processed.value = false;
+  error.value = "";
+};
+
+// 上传状态变更回调（绑定到ImageUpload组件）
+const handleUploadStatusChange = (status: boolean) => {
+  uploaded.value = status;
+};
+
+// 处理开始回调（绑定到ImageProcess组件）
+const handleProcessStart = () => {
+  processed.value = false;
+  error.value = "";
+};
+
+// 处理成功回调（绑定到ImageProcess组件）
+const handleProcessSuccess = () => {
+  processed.value = true;
+};
+
+// 处理失败回调（绑定到ImageProcess组件）
+const handleProcessError = (err: string) => {
+  error.value = err;
+};
+
+// 定义下载图片方法（修复TS2339错误）
+const handleDownload = () => {
+  downloadImage("processed-image");
+};
+
+// 定义重置所有方法（修复TS2339错误）
+const handleReset = () => {
+  reset();
+  uploaded.value = false;
+  processed.value = false;
+  uploadedFileUrl.value = "";
+  error.value = "";
+};
 </script>

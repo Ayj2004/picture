@@ -1,6 +1,7 @@
-// src/composables/useImageProcess.ts
 import { ref, onMounted } from "vue";
 import type { ImageProcessConfig, ProcessResult, UploadFile } from "@/types";
+
+// 引入默认静态图片和处理完成图片
 import defaultImageUrl from "@/assets/test.png";
 import finishImageUrl from "@/assets/finish.png";
 
@@ -10,10 +11,10 @@ export const useImageProcess = () => {
   const uploadedFile = ref<UploadFile | null>(null);
   const processedImageUrl = ref("");
   const defaultImageBlobUrl = ref("");
-  // 新增：标记是否点击过开始处理并完成
+  // 新增：标记是否点击开始处理并完成
   const isProcessed = ref(false);
 
-  // 初始化默认图片逻辑（不变）
+  // 初始化默认图片（test.png）
   const initDefaultImage = async () => {
     try {
       const response = await fetch(defaultImageUrl);
@@ -32,7 +33,7 @@ export const useImageProcess = () => {
     initDefaultImage();
   });
 
-  // 上传图片逻辑（不变）
+  // 上传图片逻辑
   const uploadImage = (file: File): UploadFile => {
     if (defaultImageBlobUrl.value) {
       URL.revokeObjectURL(defaultImageBlobUrl.value);
@@ -44,18 +45,21 @@ export const useImageProcess = () => {
     return uploadFileObj;
   };
 
-  // 处理图片逻辑：完成后标记isProcessed为true
+  // 处理图片逻辑（直接返回finish.png）
   const processImage = async (
     config: ImageProcessConfig
   ): Promise<ProcessResult> => {
     loading.value = true;
     error.value = "";
-    isProcessed.value = false; // 重置处理状态
+    isProcessed.value = false; // 处理前重置状态
     try {
+      // 模拟处理延迟
       await new Promise((resolve) => setTimeout(resolve, 800));
-      console.log("处理配置:", config);
+      console.log("处理配置:", config); // 使用config避免未使用警告
+
+      // 设置处理后图片为finish.png
       processedImageUrl.value = finishImageUrl;
-      isProcessed.value = true; // 标记：已处理完成
+      isProcessed.value = true; // 标记处理完成
       return { success: true, url: finishImageUrl };
     } catch (e) {
       const errorObj = e as Error;
@@ -67,7 +71,7 @@ export const useImageProcess = () => {
     }
   };
 
-  // 下载图片逻辑（不变）
+  // 下载图片
   const downloadImage = (fileName = "processed-image") => {
     if (!processedImageUrl.value) {
       alert("暂无处理后的图片可下载");
@@ -83,7 +87,7 @@ export const useImageProcess = () => {
     document.body.removeChild(a);
   };
 
-  // 重置状态：清空isProcessed
+  // 重置状态
   const reset = () => {
     if (uploadedFile.value) {
       URL.revokeObjectURL(uploadedFile.value.url);
@@ -102,13 +106,12 @@ export const useImageProcess = () => {
     initDefaultImage();
   };
 
-  // 导出新增的isProcessed状态
   return {
     loading,
     error,
     uploadedFile,
     processedImageUrl,
-    isProcessed, // 新增导出
+    isProcessed, // 导出新增的状态
     uploadImage,
     processImage,
     downloadImage,
