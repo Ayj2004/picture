@@ -4,6 +4,9 @@
     <div
       class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-primary transition-colors cursor-pointer"
       @click="triggerFileInput"
+      @drop="handleDrop"
+      @dragover="handleDragOver"
+      @dragleave="handleDragLeave"
     >
       <input
         ref="fileInput"
@@ -37,7 +40,7 @@
         />
         <button
           class="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
-          @click="handleRemove"
+          @click.stop="handleRemove"
         >
           ✕
         </button>
@@ -48,41 +51,66 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, nextTick } from "vue";
+import { ref, watch } from "vue";
 import { useImageProcess } from "@/composables/useImageProcess";
 
-const emit = defineEmits(["upload-success"]); // 定义上传成功事件
+const emit = defineEmits(["upload-success"]);
 const fileInput = ref<HTMLInputElement | null>(null);
 const { uploadImage, uploadedFile, error, reset } = useImageProcess();
 
 // 触发文件选择
 const triggerFileInput = () => {
-  fileInput.value?.click();
+  if (fileInput.value) {
+    fileInput.value.click();
+  }
 };
 
-// 处理文件选择（增加nextTick确保响应式更新完成）
+// 处理文件选择
 const handleFileChange = (e: Event) => {
   const target = e.target as HTMLInputElement;
   const file = target.files?.[0];
   if (file) {
-    nextTick(() => {
-      const uploadRes = uploadImage(file);
-      emit("upload-success", uploadRes.url); // 触发上传成功事件
-    });
+    // 直接上传文件，确保同步到useImageProcess的uploadedFile
+    const uploadRes = uploadImage(file);
+    emit("upload-success", uploadRes.url);
   }
-  target.value = ""; // 重置input
+  // 重置input，允许重复选择同一文件
+  target.value = "";
+};
+
+// 处理拖拽上传
+const handleDrop = (e: DragEvent) => {
+  e.preventDefault();
+  e.stopPropagation();
+  const file = e.dataTransfer?.files?.[0];
+  if (file && file.type.startsWith("image/")) {
+    const uploadRes = uploadImage(file);
+    emit("upload-success", uploadRes.url);
+  }
+};
+
+const handleDragOver = (e: DragEvent) => {
+  e.preventDefault();
+  e.stopPropagation();
+};
+
+const handleDragLeave = (e: DragEvent) => {
+  e.preventDefault();
+  e.stopPropagation();
 };
 
 // 移除已上传文件
 const handleRemove = () => {
   reset();
-  emit("upload-success", ""); // 清空上传状态
+  emit("upload-success", "");
 };
 
-// 监听上传状态，同步触发事件
+// 监听上传状态变化，同步触发事件
 watch(uploadedFile, (newVal) => {
   if (newVal) {
     emit("upload-success", newVal.url);
+  } else {
+    emit("upload-success", "");
   }
 });
 </script>

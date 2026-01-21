@@ -78,6 +78,10 @@
 
     <!-- 错误提示 -->
     <div v-if="error" class="text-red-500 mb-4 text-sm">{{ error }}</div>
+    <!-- 额外提示：未上传文件时禁用按钮并提示 -->
+    <div v-if="!hasUploadedFile" class="text-orange-500 mb-4 text-sm">
+      ⚠️ 请先上传图片再进行处理
+    </div>
 
     <!-- 操作按钮 -->
     <div class="flex gap-4">
@@ -90,7 +94,7 @@
       <button
         class="px-6 py-2 bg-primary text-white rounded-md hover:bg-primary/90 transition-colors"
         @click="handleProcess"
-        :disabled="loading"
+        :disabled="loading || !hasUploadedFile"
       >
         <span v-if="loading" class="inline-block animate-spin mr-2">🔄</span>
         开始处理
@@ -100,13 +104,16 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref, computed } from "vue";
 import { useImageProcess } from "@/composables/useImageProcess";
 import type { ImageProcessConfig } from "@/types";
 
 // 定义事件
 const emit = defineEmits(["process-start", "process-success", "process-error"]);
-const { loading, error, processImage } = useImageProcess();
+const { loading, error, uploadedFile, processImage } = useImageProcess();
+
+// 计算属性：判断是否已上传文件
+const hasUploadedFile = computed(() => !!uploadedFile.value?.file);
 
 // 默认配置
 const config = ref<ImageProcessConfig>({
@@ -130,14 +137,14 @@ const handleReset = () => {
   };
 };
 
-// 处理图片（仅触发事件，不跳转路由）
+// 处理图片
 const handleProcess = async () => {
   emit("process-start"); // 通知开始处理
   const result = await processImage(config.value);
   if (result.success) {
     emit("process-success"); // 通知处理成功
   } else {
-    emit("process-error", result.error); // 通知处理失败
+    emit("process-error", result.error || "处理失败，请重试"); // 通知处理失败
   }
 };
 </script>

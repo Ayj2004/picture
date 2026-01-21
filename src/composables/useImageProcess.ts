@@ -13,11 +13,12 @@ export const useImageProcess = () => {
   // 1. 上传图片（生成本地预览URL）
   const uploadImage = (file: File): UploadFile => {
     const url = URL.createObjectURL(file);
-    uploadedFile.value = { file, url };
-    return uploadedFile.value;
+    const uploadFileObj: UploadFile = { file, url };
+    uploadedFile.value = uploadFileObj; // 确保文件对象正确赋值
+    return uploadFileObj;
   };
 
-  // 2. 处理图片（修复：使用FormData传递文件+配置）
+  // 2. 处理图片（修复文件校验和请求逻辑）
   const processImage = async (
     config: ImageProcessConfig
   ): Promise<ProcessResult> => {
@@ -31,20 +32,18 @@ export const useImageProcess = () => {
     loading.value = true;
     error.value = "";
     try {
-      // 步骤1：构建FormData，包含文件和配置
+      // 步骤1：构建FormData（同时传递文件和配置）
       const formData = new FormData();
-      // 添加图片文件
       formData.append("file", uploadedFile.value.file);
-      // 添加处理配置（转为JSON字符串）
+      // 将配置转为JSON字符串传递
       formData.append("config", JSON.stringify(config));
 
-      // 步骤2：调用组合处理接口，传递FormData
+      // 步骤2：调用边缘函数接口（使用FormData正确传递文件）
       const response = await fetch(
         `${EDGE_FUNCTION_URL}/api/process/composite`,
         {
           method: "POST",
-          body: formData, // 传递FormData而非JSON
-          // 无需手动设置Content-Type，浏览器会自动添加multipart/form-data及boundary
+          body: formData, // 直接传递FormData，无需设置Content-Type
         }
       );
 
@@ -52,7 +51,7 @@ export const useImageProcess = () => {
         throw new Error(`请求失败：${response.status} ${response.statusText}`);
       }
 
-      // 处理后的图片转为Blob URL
+      // 处理响应：获取Blob并生成预览URL
       const blob = await response.blob();
       const url = URL.createObjectURL(blob);
       processedImageUrl.value = url;
@@ -75,15 +74,18 @@ export const useImageProcess = () => {
     }
     const a = document.createElement("a");
     a.href = processedImageUrl.value;
-    const ext = processedImageUrl.value.split(";")[0].split("/")[1] || "png";
-    a.download = `${fileName}.${ext}`;
+    // 从Blob URL解析文件格式
+    const blobType =
+      processedImageUrl.value.split(";")[0].split("/")[1] || "png";
+    a.download = `${fileName}.${blobType}`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
   };
 
-  // 4. 重置状态
+  // 4. 重置状态（清理URL和文件）
   const reset = () => {
+    // 释放URL对象，避免内存泄漏
     if (uploadedFile.value) {
       URL.revokeObjectURL(uploadedFile.value.url);
     }
